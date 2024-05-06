@@ -71,3 +71,17 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/b/{identity}/', [BookingController::class, 'show']);
 
 });
+
+Route::group(['middleware' => ['auth:sanctum']], function () {
+    Route::post('/event/new/', [EventController::class, 'store']);
+    Route::post('/event/image/new/{id}', [EventController::class, 'storeImage']);
+    Route::post('/event/{slug}', [BookingController::class, 'store']);
+    Route::get('/u/{name}/', [BookingController::class, 'index']);
+    Route::get('/b/{identity}/', [BookingController::class, 'show']);
+
+});
+
+Route::group(['as'=>'worker.','prefix' => 'worker','namespace'=>'Worker','middleware'=>['auth','worker']], function () {
+    Route::get('list/clients/', [UserController::class, 'listUsersByWorker'])->name('dashboard');
+});
+
