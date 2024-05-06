@@ -94,12 +94,9 @@ class UserController extends Controller
             $validateUser = Validator::make(
                 $request->all(),
                 [
-                    'firstName' => '',
-                    'lastName' => '',
-                    'phone' => '',
-                    'joined' => 'required',
-                    'hasManager' => '',
-                    'gmt' => 'required',
+                    'firstName' => 'required',
+                    'lastName' => 'required',
+                    'phone' => 'required|unique:users,phone',
                     'email' => 'required|email|unique:users,email',
                     'password' => 'required'
                 ]
@@ -412,5 +409,12 @@ class UserController extends Controller
             return abort(403, 'Unauthorized action.');
         }*/
         return UserResource::collection(User::paginate(10));
+    }
+
+    public function listUsersByWorker(Request $request)
+    {
+        return UserResource::collection(
+            
+        );
     }
 }

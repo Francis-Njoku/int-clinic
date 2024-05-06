@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateUserAttendanceTable extends Migration
+class CreateFeaturesTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,9 +13,14 @@ class CreateUserAttendanceTable extends Migration
      */
     public function up()
     {
-        Schema::create('attendances', function (Blueprint $table) {
+        Schema::create('features', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            $table->foreignIdFor(\App\Models\User::class, 'user_id');
+            $table->string('incidentType');
+            $table->string('severity');
+            $table->string('identity')->unique();
+            $table->dateTime('incidentDate');
+            $table->longText('details');
             $table->string('status');
             $table->timestamps();
         });
@@ -28,6 +33,6 @@ class CreateUserAttendanceTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('attendances');
+        Schema::dropIfExists('features');
     }
 }

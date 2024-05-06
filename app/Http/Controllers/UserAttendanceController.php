@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\UserAttendance;
+use App\Models\User;
 use App\Http\Requests\StoreUserAttendanceRequest;
 use App\Http\Requests\UpdateUserAttendanceRequest;
 
@@ -26,7 +27,9 @@ class UserAttendanceController extends Controller
      */
     public function store(StoreUserAttendanceRequest $request)
     {
-        //
+        $data = $request->validated();
+
+        $clockStore = [];
     }
 
     /**

@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class AddStatusToUserAttendances extends Migration
+class CreateWorkerClientTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,8 +13,12 @@ class AddStatusToUserAttendances extends Migration
      */
     public function up()
     {
-        Schema::table('user_attendances', function (Blueprint $table) {
+        Schema::create('worker_clients', function (Blueprint $table) {
+            $table->id();
+            $table->foreignIdFor(\App\Models\User::class, 'user_id');
+            $table->foreignIdFor(\App\Models\User::class, 'worker_id');
             $table->string('status');
+            $table->timestamps();
         });
     }
 
@@ -25,8 +29,6 @@ class AddStatusToUserAttendances extends Migration
      */
     public function down()
     {
-        Schema::table('user_attendances', function (Blueprint $table) {
-            $table->string('status');
-        });
+        Schema::dropIfExists('worker_clients');
     }
 }
