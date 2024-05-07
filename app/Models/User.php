@@ -22,15 +22,11 @@ class User extends Authenticatable implements MustVerifyEmail
         'email',
         'firstName',
         'lastName',
-        'isStaff',
+        'group_id',
         'identity',
         'phone',
         'password',
-        'hasManager', 
-        'joined',
-        'manager_id',
-        'status',
-        'gmt'
+        'status'
     ];
 
     /**
@@ -52,8 +48,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'email_verified_at' => 'datetime',
     ];
 
-    public function Manager()
+    public function group()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(Group::class);
     }
 }

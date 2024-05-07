@@ -4,6 +4,8 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+
 
 class HomeCareWorkerMiddleware
 {
@@ -16,12 +18,14 @@ class HomeCareWorkerMiddleware
      */
     public function handle(Request $request, Closure $next)
     {
-        if (auth::check() && Auth::user()->group_id == 2) {
+        if (Auth::check() && Auth::user()->group_id == 2) {
             return $next($request);
         } else {
             return response()->json([
                 'status' => false,
-                'message' => 'Unauthorised'
+                'message' => 'Unauthorized user'
             ], 401);
+        }
     }
 }
+

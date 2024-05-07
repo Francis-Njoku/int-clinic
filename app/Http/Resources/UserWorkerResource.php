@@ -7,7 +7,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\DB;
 use App\Http\Resources\GroupResource;
 
-class UserResource extends JsonResource
+class UserWorkerResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -26,7 +26,7 @@ class UserResource extends JsonResource
             'phone' => $this->phone,
             'email' => $this->email,
             'identity' => $this->identity,
-            'group' => new GroupResource($this->group),
+            //'group' => new GroupResource($this->group),
             'created_at' => (new \DateTime($this->created_at))->format('Y-m-d H:i:s'),
             'updated_at' => (new \DateTime($this->updated_at))->format('Y-m-d H:i:s'),
         ];

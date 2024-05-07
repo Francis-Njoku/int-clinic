@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ForgotPasswordRequest;
 use App\Http\Resources\UserResource;
+use App\Http\Resources\UserWorkerResource;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\UserGroup;
@@ -23,6 +24,22 @@ use Illuminate\Support\Facades\Mail;
 
 class UserController extends Controller
 {
+    /*
+    * Check identifier field
+    */
+    protected function credentials($identifier)
+    {
+        if(is_numeric($identifier)){
+
+            return "phone"; //['phone'=>$request->get('email'),'password'=>$request->get('password')];
+        }
+        elseif (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
+
+            return "email"; //['email' => $request->get('email'), 'password'=>$request->get('password')];
+        }
+
+        return "name"; //['username' => $request->get('email'), 'password'=>$request->get('password')];
+    }
     /***
      * Generate Identity
      * @param No params
@@ -110,47 +127,18 @@ class UserController extends Controller
                 ], 401);
             }
 
-            $this->isValidTimezoneId($request->gmt);
-
-            if($request->manager_id)
-            {
-                $user = User::create([
-                    'name' => $this->generateUser(),
-                    'email' => $request->email,
-                    'firstName' => $request->firstname,
-                    'lastName' => $request->lastname,
-                    'phone' => $request->phone,
-                    'identity' => $this->generateIdentity(),
-                    'isStaff' => 1,
-                    'status' => 'approved',
-                    'hasManager' => $request->hasManager,
-                    'joined' => $request->joined,
-                    'manager_id' => $request->manager_id,
-                    'password' => Hash::make($request->password)
-                ]);
-            }
-            else{
-                $user = User::create([
-                    'name' => $this->generateUser(),
-                    'email' => $request->email,
-                    'firstName' => $request->firstname,
-                    'lastName' => $request->lastname,
-                    'phone' => $request->phone,
-                    'identity' => $this->generateIdentity(),
-                    'isStaff' => 1,
-                    'status' => 'approved',
-                    'hasManager' => $request->hasManager,
-                    'joined' => $request->joined,
-                    'password' => Hash::make($request->password)
-                ]);
-            }
-
-
-            $userGroup = UserGroup::create([
-                'user_id' => $user->id,
-                'group_id' => '1'
+            $user = User::create([
+                'name' => $request->firstName.$this->generateUser(),
+                'email' => $request->email,
+                'firstName' => $request->firstName,
+                'lastName' => $request->lastName,
+                'phone' => $request->phone,
+                'identity' => $this->generateIdentity(),
+                'status' => 'approved',
+                'group_id' => $request->group_id,
+                'password' => Hash::make($request->password)
             ]);
-
+            
             // Send email to new user
             event(new Registered($user));
 
@@ -178,7 +166,7 @@ class UserController extends Controller
             $validateUser = Validator::make(
                 $request->all(),
                 [
-                    'email' => 'required|email',
+                    'identifier' => 'required',
                     'password' => 'required'
                 ]
             );
@@ -190,15 +178,18 @@ class UserController extends Controller
                     'errors' => $validateUser->errors()
                 ], 401);
             }
+            
+            $getField = $this->credentials($request->identifier);
 
-            if (!Auth::attempt($request->only(['email', 'password']))) {
+            if (!Auth::attempt([$getField => $request->identifier, 'password' => $request->password])) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Email & Password does not match with our record.',
+                    'message' => $getField.' & Password does not match with our record.',
                 ], 401);
             }
 
-            $user = User::where('email', $request->email)->first();
+
+            $user = User::where($getField, $request->identifier)->first();
 
             return response()->json([
                 'status' => true,
@@ -347,60 +338,11 @@ class UserController extends Controller
 
 
     /**
-     * @param ForgotPasswordRequest $request
-     * @return JsonResponse
-     * @throws ValidationException
-     */
-
-    /**
-    public function forgot(ForgotPasswordRequest $request): JsonResource
-    {
-        
-        $user = ($query = User::query());
-
-        $user = $user->where($query->qualifyColumn('email'), $request->input('email'))->first();
-
-        // if no such user exists then throw an error
-        if (!$user || !$user->email) {
-            return response()->error('No Record Found', 'Incorrect Email Address Provided', 404);
-        }
-
-        // Generate a 4 digit random Token
-        $resetPasswordToken = str_pad(random_int(1, 9999), 4, '0', STR_PAD_LEFT);
-
-        // In case User has already requested for forgot password don't create another record
-        // Instead update the existing token with the new token
-        if (!$userPassReset = PasswordReset::where('email', $user->email)->first()) {
-            // Store TOken in DB with Token Expiration Time ié: 1 hour
-            PasswordReset::create([
-                'email' => $user->email,
-                'token' => $resetPasswordToken,
-            ]);
-        } else {
-            // Store Token in DB with Token expiration time 1 hour
-            $userPassReset->update([
-                'email' => $user->email,
-                'token' => $resetPasswordToken,
-            ]);
-        }
-        // Send notification to the user about the reset token
-        $user->notify(
-            new PasswordResetNotification(
-                $user,
-                $resetPasswordToken
-            )
-        );
-
-        return new JsonResponse(['message' => 'A Code has been Sent to your Email Address.']);
-    }
-     */
-
-    /**
      * Display the specified resource.
      *
      * @param  int  $id
      * @return \Illuminate\Http\Response
-     */
+     */   
     public function listUsers(Request $request)
     {
         /*
@@ -413,8 +355,32 @@ class UserController extends Controller
 
     public function listUsersByWorker(Request $request)
     {
-        return UserResource::collection(
-            
-        );
+        if ($request->get('s'))
+        {
+            return UserWorkerResource::collection(
+                DB::table('users')
+                ->join('worker_clients', 'users.id','=', 'worker_clients.worker_id')
+                ->select('users.*')
+                ->where('worker_clients.worker_id','=',Auth::id())
+                ->where(function($query) use ($request){
+                    $query->where('users.firstName', 'like', '%'.$request->get('s').'%')
+                    ->orWhere('users.lastName', 'like', '%'.$request->get('s').'%')
+                    ->orWhere('users.phone', 'like', '%'.$request->get('s').'%')
+                    ->orWhere('users.name', 'like', '%'.$request->get('s').'%')
+                    ->orWhere('users.email', 'like', '%'.$request->get('s').'%');
+                })
+                ->paginate(10)
+            );
+        }
+        else{
+            return UserWorkerResource::collection(
+                DB::table('users')
+                ->join('worker_clients', 'users.id','=', 'worker_clients.worker_id')
+                ->select('users.*')
+                ->where('worker_clients.worker_id','=',Auth::id())
+                ->paginate(10)
+            );
+        }
+        
     }
 }

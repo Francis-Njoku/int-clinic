@@ -81,7 +81,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
 });
 
-Route::group(['as'=>'worker.','prefix' => 'worker','namespace'=>'Worker','middleware'=>['auth','worker']], function () {
-    Route::get('list/clients/', [UserController::class, 'listUsersByWorker'])->name('dashboard');
+Route::group(['as'=>'worker.','prefix' => 'worker','namespace'=>'Worker','middleware'=>['auth:sanctum','worker']], function () {
+    Route::get('/list/clients/', [UserController::class, 'listUsersByWorker'])->name('dashboard');
 });
 

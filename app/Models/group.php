@@ -10,4 +10,9 @@ class Group extends Model
     use HasFactory;
 
     protected $fillable = ['name', 'status'];
+
+    public function user()
+    {
+        return $this->hasMany(User::class);
+    }
 }
